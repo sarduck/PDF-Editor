@@ -1,0 +1,25 @@
+/* Add application specific styles that are not handled by Tailwind */
+
+.pdf-viewer {
+  min-height: 500px;
+  width: 100%;
+}
+
+.pdf-thumbnail {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pdf-thumbnail:hover {
+  transform: scale(1.05);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+} 
