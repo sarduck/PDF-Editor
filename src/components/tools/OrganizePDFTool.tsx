@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Document, Page } from 'react-pdf'
-import { ArrowUpIcon, ArrowDownIcon, ViewfinderCircleIcon } from '@heroicons/react/24/outline'
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
+import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/outline'
 import FileUpload from '../FileUpload'
 import useFileUpload from '../../hooks/useFileUpload'
 import PDFService from '../../services/PDFService'
@@ -22,6 +21,8 @@ const OrganizePDFTool: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [dragItem, setDragItem] = useState<number | null>(null);
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null);
 
   // Initialize page order when PDF is loaded
   useEffect(() => {
@@ -72,21 +73,36 @@ const OrganizePDFTool: React.FC = () => {
     setPageOrder(newOrder);
   };
 
-  // Handle drag end event
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source } = result;
+  // Drag and drop handlers
+  const handleDragStart = (index: number) => {
+    setDragItem(index);
+  };
 
-    // If there's no destination or the item is dropped back to its original position
-    if (!destination || (destination.index === source.index)) {
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverItem(index);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    if (dragItem === null || dragOverItem === null || dragItem === dragOverItem) {
       return;
     }
-
-    // Reorder the pages
-    const newOrder = Array.from(pageOrder);
-    const [removed] = newOrder.splice(source.index, 1);
-    newOrder.splice(destination.index, 0, removed);
-
+    
+    const newOrder = [...pageOrder];
+    const draggedItemValue = newOrder[dragItem];
+    
+    // Remove the dragged item
+    newOrder.splice(dragItem, 1);
+    // Insert it at the new position
+    newOrder.splice(dragOverItem, 0, draggedItemValue);
+    
+    console.log('Reordering from', dragItem, 'to', dragOverItem, 'New order:', newOrder);
+    
     setPageOrder(newOrder);
+    setDragItem(null);
+    setDragOverItem(null);
   };
 
   const handleOrganizePDF = async () => {
@@ -136,13 +152,15 @@ const OrganizePDFTool: React.FC = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-medium text-gray-900">Rearrange Pages</h3>
               {pageOrder.length > 0 && (
-                <button
-                  type="button"
-                  onClick={resetOrder}
-                  className="text-sm text-primary-600 hover:text-primary-800"
-                >
-                  Reset Order
-                </button>
+                <div className="space-x-3">
+                  <button
+                    type="button"
+                    onClick={resetOrder}
+                    className="text-sm text-primary-600 hover:text-primary-800"
+                  >
+                    Reset Order
+                  </button>
+                </div>
               )}
             </div>
             
@@ -157,8 +175,14 @@ const OrganizePDFTool: React.FC = () => {
                 </div>
               ) : (
                 <div>
+                  {numPages && pageOrder.length > 0 && (
+                    <div className="mb-3 p-3 bg-primary-50 border border-primary-100 rounded-md text-sm text-primary-800">
+                      <p><strong>Tip:</strong> Drag and drop pages to reorder them, or use the arrow buttons to move pages up and down.</p>
+                    </div>
+                  )}
+
                   <Document
-                    file={files[0].data}
+                    file={files[0]?.data}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={
@@ -171,96 +195,77 @@ const OrganizePDFTool: React.FC = () => {
                     }
                   >
                     {numPages && pageOrder.length > 0 && (
-                      <div className="mb-3 p-3 bg-primary-50 border border-primary-100 rounded-md text-sm text-primary-800">
-                        <p><strong>Tip:</strong> Drag and drop pages to reorder them, or use the arrow buttons to move pages up and down.</p>
+                      <div className="space-y-3">
+                        {pageOrder.map((pageIdx, orderIdx) => (
+                          <div
+                            key={orderIdx}
+                            draggable
+                            onDragStart={() => handleDragStart(orderIdx)}
+                            onDragOver={(e) => handleDragOver(e, orderIdx)}
+                            onDrop={handleDrop}
+                            className={`flex items-center p-3 border ${dragOverItem === orderIdx ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-gray-50'} rounded-md hover:bg-gray-100 transition-all cursor-grab active:cursor-grabbing`}
+                          >
+                            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary-100 rounded-full mr-4">
+                              <span className="font-bold text-primary-700">{orderIdx + 1}</span>
+                            </div>
+                            
+                            <div className="flex-shrink-0 mr-4 border border-gray-300 rounded-md overflow-hidden bg-white">
+                              <Page
+                                pageNumber={pageIdx + 1}
+                                width={80}
+                                renderTextLayer={false}
+                                renderAnnotationLayer={false}
+                                loading={
+                                  <div className="flex justify-center items-center h-[100px] w-[80px] bg-gray-50">
+                                    <svg className="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  </div>
+                                }
+                                error={
+                                  <div className="flex justify-center items-center h-[100px] w-[80px] bg-red-50 text-red-600">
+                                    <span className="text-xs text-center">Error</span>
+                                  </div>
+                                }
+                              />
+                            </div>
+                            
+                            <div className="flex-grow flex items-center">
+                              <div>
+                                <div className="text-sm font-medium">Original Page {pageIdx + 1}</div>
+                                <div className="text-xs text-gray-500">Now at position {orderIdx + 1}</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => movePageUp(orderIdx)}
+                                disabled={orderIdx === 0}
+                                className={`p-2 rounded-md ${
+                                  orderIdx === 0 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-200'
+                                }`}
+                                aria-label="Move up"
+                              >
+                                <ArrowUpIcon className="h-5 w-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => movePageDown(orderIdx)}
+                                disabled={orderIdx === pageOrder.length - 1}
+                                className={`p-2 rounded-md ${
+                                  orderIdx === pageOrder.length - 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-200'
+                                }`}
+                                aria-label="Move down"
+                              >
+                                <ArrowDownIcon className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="pdf-pages">
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="space-y-3"
-                          >
-                            {numPages && pageOrder.map((pageIdx, orderIdx) => (
-                              <Draggable key={`page-${pageIdx}`} draggableId={`page-${pageIdx}`} index={orderIdx}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`flex items-center p-3 border ${snapshot.isDragging ? 'border-primary-400' : 'border-gray-200'} rounded-md ${snapshot.isDragging ? 'bg-primary-50' : 'bg-gray-50'} ${snapshot.isDragging ? 'shadow-lg' : 'hover:bg-gray-100'} transition-all`}
-                                  >
-                                    <div 
-                                      {...provided.dragHandleProps}
-                                      className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary-100 rounded-full mr-4 cursor-grab active:cursor-grabbing"
-                                    >
-                                      <span className="font-bold text-primary-700">{orderIdx + 1}</span>
-                                    </div>
-                                    
-                                    <div className="flex-shrink-0 mr-4 border border-gray-300 rounded-md overflow-hidden bg-white">
-                                      <Page
-                                        pageNumber={pageIdx + 1}
-                                        width={80}
-                                        renderTextLayer={false}
-                                        renderAnnotationLayer={false}
-                                        loading={
-                                          <div className="flex justify-center items-center h-[100px] w-[80px] bg-gray-50">
-                                            <svg className="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                          </div>
-                                        }
-                                        error={
-                                          <div className="flex justify-center items-center h-[100px] w-[80px] bg-red-50 text-red-600">
-                                            <span className="text-xs text-center">Error</span>
-                                          </div>
-                                        }
-                                      />
-                                    </div>
-                                    
-                                    <div className="flex-grow flex items-center">
-                                      <div>
-                                        <div className="text-sm font-medium">Original Page {pageIdx + 1}</div>
-                                        <div className="text-xs text-gray-500">Now at position {orderIdx + 1}</div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex space-x-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => movePageUp(orderIdx)}
-                                        disabled={orderIdx === 0}
-                                        className={`p-2 rounded-md ${
-                                          orderIdx === 0 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                        aria-label="Move up"
-                                      >
-                                        <ArrowUpIcon className="h-5 w-5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => movePageDown(orderIdx)}
-                                        disabled={orderIdx === pageOrder.length - 1}
-                                        className={`p-2 rounded-md ${
-                                          orderIdx === pageOrder.length - 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                        aria-label="Move down"
-                                      >
-                                        <ArrowDownIcon className="h-5 w-5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
                   </Document>
                 </div>
               )}

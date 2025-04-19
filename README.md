@@ -15,12 +15,12 @@ The application provides the following PDF manipulation capabilities:
 
 ### 📋 Organize PDF
 - **Merge PDFs** - Combine multiple PDFs into a single document
+- **Split PDF** - Divide a PDF into multiple separate documents
 - **Remove Pages** - Delete unwanted pages from your PDF
 - **Extract Pages** - Pull out specific pages into a new document
 - **Organize PDF** - Reorder pages within your document
 
 ### 🔄 Convert & Optimize
-- Scan to PDF
 - Compress PDF
 - Repair PDF
 - OCR PDF
@@ -94,6 +94,7 @@ http://localhost:5173
 
 Currently, the following tools are implemented:
 - ✅ Merge PDFs
+- ✅ Split PDF
 - ✅ Remove pages
 - ✅ Extract pages
 - ✅ Organize PDF (reorder pages)

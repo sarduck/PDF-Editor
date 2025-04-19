@@ -13,6 +13,7 @@ import {
   LockOpenIcon,
   PencilSquareIcon,
   QueueListIcon,
+  ScissorsIcon,
   WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline'
 
@@ -35,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveTool }) => {
       title: "Organize PDF",
       tools: [
         { id: "merge", name: "Merge PDF", icon: DocumentDuplicateIcon },
+        { id: "split", name: "Split PDF", icon: ScissorsIcon },
         { id: "remove-pages", name: "Remove Pages", icon: DocumentMinusIcon },
         { id: "extract-pages", name: "Extract Pages", icon: DocumentPlusIcon },
         { id: "organize", name: "Organize PDF", icon: QueueListIcon },
@@ -43,7 +45,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveTool }) => {
     {
       title: "Convert & Optimize",
       tools: [
-        { id: "scan-to-pdf", name: "Scan to PDF", icon: DocumentMagnifyingGlassIcon },
         { id: "compress", name: "Compress PDF", icon: DocumentChartBarIcon },
         { id: "repair", name: "Repair PDF", icon: WrenchScrewdriverIcon },
         { id: "ocr", name: "OCR PDF", icon: DocumentTextIcon },

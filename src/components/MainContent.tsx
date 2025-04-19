@@ -3,6 +3,7 @@ import MergePDFTool from './tools/MergePDFTool'
 import RemovePagesTool from './tools/RemovePagesTool'
 import ExtractPagesTool from './tools/ExtractPagesTool'
 import OrganizePDFTool from './tools/OrganizePDFTool'
+import SplitPDFTool from './tools/SplitPDFTool'
 import WelcomeScreen from './WelcomeScreen'
 
 interface MainContentProps {
@@ -14,6 +15,8 @@ const MainContent: React.FC<MainContentProps> = ({ activeTool }) => {
     switch (activeTool) {
       case 'merge':
         return <MergePDFTool />
+      case 'split':
+        return <SplitPDFTool />
       case 'remove-pages':
         return <RemovePagesTool />
       case 'extract-pages':
