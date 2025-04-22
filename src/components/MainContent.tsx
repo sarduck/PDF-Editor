@@ -4,6 +4,7 @@ import RemovePagesTool from './tools/RemovePagesTool'
 import ExtractPagesTool from './tools/ExtractPagesTool'
 import OrganizePDFTool from './tools/OrganizePDFTool'
 import SplitPDFTool from './tools/SplitPDFTool'
+import CompressPDFTool from './tools/CompressPDFTool'
 import WelcomeScreen from './WelcomeScreen'
 
 interface MainContentProps {
@@ -23,6 +24,8 @@ const MainContent: React.FC<MainContentProps> = ({ activeTool }) => {
         return <ExtractPagesTool />
       case 'organize':
         return <OrganizePDFTool />
+      case 'compress':
+        return <CompressPDFTool />
       // We'll implement the remaining tools later
       default:
         return <WelcomeScreen />
