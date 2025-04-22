@@ -14,9 +14,7 @@ const useFileUpload = (options: UseFileUploadOptions = {}) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = event.target.files;
-    
+  const processFiles = useCallback((fileList: FileList) => {
     if (!fileList || fileList.length === 0) {
       return;
     }
@@ -26,17 +24,20 @@ const useFileUpload = (options: UseFileUploadOptions = {}) => {
     
     const uploadedFiles: PDFFile[] = [];
     const fileReaders: Promise<void>[] = [];
+    let hasError = false;
     
     Array.from(fileList).forEach((file) => {
       // Check if file type is accepted
       if (!file.type.includes('pdf')) {
         setError("Only PDF files are accepted");
+        hasError = true;
         return;
       }
       
       // Check file size
       if (file.size > maxSize) {
         setError(`File size exceeds the maximum allowed size (${maxSize / (1024 * 1024)}MB)`);
+        hasError = true;
         return;
       }
       
@@ -53,6 +54,12 @@ const useFileUpload = (options: UseFileUploadOptions = {}) => {
           }
           resolve();
         };
+        
+        reader.onerror = () => {
+          setError("Error reading file: " + file.name);
+          hasError = true;
+          resolve();
+        };
       });
       
       fileReaders.push(readerPromise);
@@ -61,10 +68,12 @@ const useFileUpload = (options: UseFileUploadOptions = {}) => {
     
     Promise.all(fileReaders)
       .then(() => {
-        if (multiple) {
-          setFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
-        } else {
-          setFiles(uploadedFiles);
+        if (!hasError) {
+          if (multiple) {
+            setFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
+          } else {
+            setFiles(uploadedFiles);
+          }
         }
       })
       .catch((err) => {
@@ -75,6 +84,10 @@ const useFileUpload = (options: UseFileUploadOptions = {}) => {
         setIsLoading(false);
       });
   }, [multiple, maxSize]);
+
+  const handleFileUpload = useCallback((fileList: FileList) => {
+    processFiles(fileList);
+  }, [processFiles]);
 
   const clearFiles = useCallback(() => {
     setFiles([]);

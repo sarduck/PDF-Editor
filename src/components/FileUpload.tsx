@@ -1,10 +1,10 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, DragEvent } from 'react'
 import { DocumentArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { PDFFile } from '../services/PDFService'
 
 interface FileUploadProps {
   files: PDFFile[];
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileUpload: (files: FileList) => void;
   onClearFiles?: () => void;
   onRemoveFile?: (index: number) => void;
   acceptTypes?: string;
@@ -24,9 +24,44 @@ const FileUpload: React.FC<FileUploadProps> = ({
   error = null
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      onFileUpload(event.target.files);
+    }
+  };
+
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      onFileUpload(e.dataTransfer.files);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -41,16 +76,22 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="w-full">
-      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+      <div 
+        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 bg-white'} border-dashed rounded-md transition-colors duration-200`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         <div className="space-y-1 text-center">
           <DocumentArrowUpIcon 
-            className="mx-auto h-12 w-12 text-gray-400" 
+            className={`mx-auto h-12 w-12 ${isDragging ? 'text-primary-500' : 'text-gray-400'} transition-colors duration-200`}
             aria-hidden="true" 
           />
           <div className="flex text-sm text-gray-600">
             <label
               htmlFor="file-upload"
-              className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500"
+              className="relative cursor-pointer bg-transparent rounded-md font-medium text-primary-600 hover:text-primary-500"
             >
               <span onClick={handleButtonClick}>Upload a file</span>
               <input
@@ -61,13 +102,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 className="sr-only"
                 accept={acceptTypes}
                 multiple={multiple}
-                onChange={onFileUpload}
+                onChange={handleInputChange}
                 disabled={loading}
               />
             </label>
             <p className="pl-1">or drag and drop</p>
           </div>
           <p className="text-xs text-gray-500">PDF files up to 100MB</p>
+          {isDragging && (
+            <p className="text-sm font-medium text-primary-600">Drop your files here</p>
+          )}
         </div>
       </div>
 
